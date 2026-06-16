@@ -10,7 +10,10 @@ export interface Tool {
   desc: string;
   color: string;
   coming?: boolean;
+  logo?: string;
 }
+
+const LOGO_PREFIX = "emsmountain_cardlogo_";
 
 function EditableField({
   value,
@@ -89,13 +92,40 @@ export default function ToolCard({
 }) {
   const [tool, setTool] = useState(initial);
   const [hovered, setHovered] = useState(false);
+  const [cardLogo, setCardLogo] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setTool(initial); }, [initial]);
+
+  useEffect(() => {
+    // Load per-card logo from localStorage
+    const saved = localStorage.getItem(LOGO_PREFIX + initial.id);
+    if (saved) setCardLogo(saved);
+  }, [initial.id]);
 
   function update(patch: Partial<Tool>) {
     const next = { ...tool, ...patch };
     setTool(next);
     onUpdate(next);
+  }
+
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setCardLogo(dataUrl);
+      localStorage.setItem(LOGO_PREFIX + tool.id, dataUrl);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  function removeCardLogo(e: React.MouseEvent) {
+    e.stopPropagation();
+    setCardLogo(null);
+    localStorage.removeItem(LOGO_PREFIX + tool.id);
   }
 
   const isLive = !tool.coming && tool.url !== "#";
@@ -128,21 +158,62 @@ export default function ToolCard({
         pointerEvents: "none", transition: "opacity 0.3s",
       }} />
 
+      <input
+        ref={logoInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleLogoUpload}
+        style={{ display: "none" }}
+      />
+
       <div style={{ position: "relative", zIndex: 1 }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.8rem" }}>
-          <EditableField
-            value={tool.abbr}
-            onChange={(v) => update({ abbr: v.slice(0, 4).toUpperCase() })}
-            style={{
-              width: 42, height: 42, lineHeight: "42px", textAlign: "center",
-              borderRadius: 10, fontSize: 11, fontWeight: 800, letterSpacing: "0.05em",
-              background: `linear-gradient(135deg,${tool.color}22,${tool.color}0d)`,
-              border: `1px solid ${tool.color}33`,
-              color: tool.color,
-              flexShrink: 0,
-            }}
-          />
+          {/* Logo / Abbr slot */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <div
+              onClick={() => logoInputRef.current?.click()}
+              title="Click to upload card logo"
+              style={{
+                width: 42, height: 42, borderRadius: 10,
+                background: cardLogo ? "transparent" : `linear-gradient(135deg,${tool.color}22,${tool.color}0d)`,
+                border: cardLogo ? `1.5px solid ${tool.color}44` : `1px solid ${tool.color}33`,
+                overflow: "hidden", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 0 2px ${tool.color}44`; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
+            >
+              {cardLogo ? (
+                <img src={cardLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <EditableField
+                  value={tool.abbr}
+                  onChange={(v) => update({ abbr: v.slice(0, 4).toUpperCase() })}
+                  style={{
+                    width: 42, height: 42, lineHeight: "42px", textAlign: "center",
+                    fontSize: 11, fontWeight: 800, letterSpacing: "0.05em",
+                    color: tool.color, display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                />
+              )}
+            </div>
+            {cardLogo && hovered && (
+              <button
+                onClick={removeCardLogo}
+                title="Remove logo"
+                style={{
+                  position: "absolute", top: -5, right: -5,
+                  width: 16, height: 16, borderRadius: "50%",
+                  background: "#dc2626", border: "none", color: "white",
+                  fontSize: 9, lineHeight: "16px", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 800,
+                }}
+              >×</button>
+            )}
+          </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <span style={{
