@@ -5,14 +5,23 @@ import MountainCanvas from "@/components/MountainCanvas";
 import ToolCard, { type Tool } from "@/components/ToolCard";
 
 const DEFAULT_TOOLS: Tool[] = [
-  { id: "bic",     name: "Behavior Intervention Center", abbr: "BIC", url: "https://behaviorinterventioncenter.com", desc: "Behavior tracking & intervention logging",    color: "#7c3aed" },
-  { id: "trail",   name: "Trail Journal",                abbr: "TJ",  url: "https://trailjournal.org",             desc: "Student growth & reflection portal",          color: "#490e6f" },
-  { id: "coc",     name: "Clash of Classes",             abbr: "CoC", url: "https://clashofclasses.org",           desc: "Gamified class competition & points",          color: "#ffe100" },
-  { id: "report",  name: "Report Logger",                abbr: "RL",  url: "https://bit.ly/reportlogger",          desc: "Incident report generation & logging",         color: "#6d28d9" },
-  { id: "followup",name: "Trailback Panel",              abbr: "TB",  url: "#",                                    desc: "Follow-up tracking & panel completion",        color: "#9333ea" },
-  { id: "comms",   name: "EMS Comms",                    abbr: "EC",  url: "#",                                    desc: "Communication output & announcements",         color: "#b45309" },
-  { id: "actbus",  name: "Activity Bus",                 abbr: "AB",  url: "#",                                    desc: "Activity bus selector & scheduling",           color: "#d97706" },
-  { id: "mtss",    name: "MTSS",                         abbr: "MT",  url: "#",                                    desc: "Multi-Tiered System of Supports",              color: "#4c1d95", coming: true },
+  // Core tools
+  { id: "bic",      name: "Behavior Intervention Center", abbr: "BIC", url: "https://behaviorinterventioncenter.com",                                                                                   desc: "Behavior tracking & intervention logging",         color: "#7c3aed" },
+  { id: "trail",    name: "Trail Journal",                abbr: "TJ",  url: "https://trailjournal.org",                                                                                                  desc: "Student growth & reflection portal",               color: "#490e6f" },
+  { id: "coc",      name: "Clash of Classes",             abbr: "CoC", url: "https://clashofclasses.org",                                                                                                desc: "Gamified squad competition & LRG points",          color: "#ffe100" },
+  { id: "report",   name: "Report Logger",                abbr: "RL",  url: "https://bit.ly/reportlogger",                                                                                               desc: "PIN-protected incident report generation",         color: "#6d28d9" },
+  { id: "followup", name: "Trailback Panel",              abbr: "TB",  url: "#",                                                                                                                          desc: "Follow-up tracking & panel completion → CoC",      color: "#9333ea" },
+  { id: "comms",    name: "EMS Comms",                    abbr: "EC",  url: "#",                                                                                                                          desc: "Communication output & announcements",             color: "#b45309" },
+  { id: "actbus",   name: "Activity Bus",                 abbr: "AB",  url: "#",                                                                                                                          desc: "Activity bus selector & scheduling",               color: "#d97706" },
+  { id: "mtss",     name: "MTSS",                         abbr: "MT",  url: "#",                                                                                                                          desc: "Multi-Tiered System of Supports",                  color: "#4c1d95", coming: true },
+  // New paths
+  { id: "traitdough", name: "Trait Dough",                abbr: "TD",  url: "#",                                                                                                                          desc: "Log LRG traits → award squad points in CoC",       color: "#16a34a", coming: true },
+  { id: "accountability", name: "Accountability Log",     abbr: "AL",  url: "https://docs.google.com/spreadsheets/d/1IVFnkQQvSvNSY_OZPMutPzkTqmJ1j5XYRoT9YvNy-v4/edit",                               desc: "Intervention & consequence tracking (staff only)",  color: "#dc2626" },
+  // MLC & Student Groups
+  { id: "mlc",      name: "MLC Resources",                abbr: "MLC", url: "https://docs.google.com/document/d/1IiUT0W1rpREqMdoWrHuVbziU8R9pqXOthQo3_1lIiqk/edit",                                   desc: "Mountaineer Learning Community docs & resources",   color: "#0891b2" },
+  { id: "sg-gold",  name: "Gold Squad",                   abbr: "GLD", url: "https://docs.google.com/document/d/1QCxGZ59ohzvSbpu3n40B9ctfkLnRsVfOLli6ZLs8n70/edit",                                   desc: "Gold squad group resources & guidelines",           color: "#ca8a04" },
+  { id: "sg-grey",  name: "Grey Squad",                   abbr: "GRY", url: "https://docs.google.com/document/d/1ymJ1zMhJg-sAono6yuyPzjXDpO6vUtI05Hw49QRUP1A/edit",                                   desc: "Grey squad group resources & guidelines",           color: "#6b7280" },
+  { id: "sg-purple",name: "Purple Squad",                 abbr: "PRP", url: "https://docs.google.com/document/d/14ZNCbY8qLq2qWiA7lC-XaL32Fr8pwzMMUD0vkq27a_A/edit",                                   desc: "Purple squad group resources & guidelines",         color: "#7c3aed" },
 ];
 
 const STORAGE_KEY = "emsmountain_tools";
