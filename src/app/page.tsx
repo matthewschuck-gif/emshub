@@ -11,9 +11,9 @@ const DEFAULT_TOOLS: Tool[] = [
   { id: "trail",    name: "Trail Journal",                abbr: "TJ",  url: "https://trailjournal.org",                                                                                                  desc: "Student growth & reflection portal",               color: "#490e6f" },
   { id: "coc",      name: "Clash of Classes",             abbr: "CoC", url: "https://clashofclasses.org",                                                                                                desc: "Gamified squad competition & LRG points",          color: "#c47f00" },
   { id: "report",   name: "Report Logger",                abbr: "RL",  url: "https://bit.ly/reportlogger",                                                                                               desc: "PIN-protected incident report generation",         color: "#6d28d9" },
-  { id: "followup", name: "Trailback Panel",              abbr: "TB",  url: "https://trailjournal.org/panel",                                                                                            desc: "Follow-up tracking & panel completion → CoC",      color: "#9333ea" },
+  { id: "followup", name: "Follow-up Scheduler",           abbr: "FS",  url: "https://trailjournal.org/panel/followup",                                                                               desc: "Schedule & track follow-up meetings → TrailJournal", color: "#9333ea" },
   { id: "comms",    name: "EMS Comms",                    abbr: "EC",  url: "#",                                                                                                                          desc: "Communication output & announcements",             color: "#b45309" },
-  { id: "actbus",   name: "Activity Bus",                 abbr: "AB",  url: "#",                                                                                                                          desc: "Activity bus selector & scheduling",               color: "#d97706" },
+  { id: "actbus",   name: "Activity Bus",                 abbr: "AB",  url: "https://bit.ly/emsbus",                                                                                              desc: "Activity bus selector & scheduling",               color: "#d97706" },
   { id: "mtss",     name: "MTSS",                         abbr: "MT",  url: "https://matthewschuck-gif.github.io/mtss/",                                                                                  desc: "Tier framework, team meetings, referral tracker",  color: "#4c1d95" },
   { id: "traitdough",     name: "Trait Dough",            abbr: "TD",  url: "https://bit.ly/traitdough",                                                                                                  desc: "Log LRG traits → live squad points in CoC",        color: "#16a34a" },
   { id: "accountability", name: "Accountability Log",     abbr: "AL",  url: "https://docs.google.com/spreadsheets/d/1IVFnkQQvSvNSY_OZPMutPzkTqmJ1j5XYRoT9YvNy-v4/edit",                               desc: "Intervention & consequence log (staff only)",       color: "#dc2626" },
@@ -148,14 +148,24 @@ function Fireflies() {
 
 let nextId = 100;
 
+const ADMIN_PIN = "5064";
+
 export default function Home() {
   const [tools, setTools] = useState<Tool[]>(DEFAULT_TOOLS);
   const [editing, setEditing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [logo, setLogo] = useState<string | null>(null);
   const [tagline, setTagline] = useState(DEFAULT_TAGLINE);
   const [editingTagline, setEditingTagline] = useState(false);
   const taglineRef = useRef<HTMLParagraphElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  function unlockAdmin() {
+    if (isAdmin) { setIsAdmin(false); setEditing(false); return; }
+    const pin = prompt("Enter admin PIN:");
+    if (pin === ADMIN_PIN) setIsAdmin(true);
+    else if (pin !== null) alert("Incorrect PIN.");
+  }
 
   useEffect(() => {
     setTools(load());
@@ -167,6 +177,11 @@ export default function Home() {
     const savedTag = localStorage.getItem(TAGLINE_KEY);
     if (savedTag) setTagline(savedTag);
   }, []);
+
+  function handleLogoClick() {
+    if (!isAdmin) { alert("Enter admin mode to change the logo."); return; }
+    fileRef.current?.click();
+  }
 
   async function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -182,6 +197,7 @@ export default function Home() {
   }
 
   function startTaglineEdit(e: React.MouseEvent) {
+    if (!isAdmin) return;
     e.preventDefault();
     setEditingTagline(true);
     setTimeout(() => {
@@ -236,8 +252,8 @@ export default function Home() {
 
           {/* Logo upload spot */}
           <div
-            onClick={() => fileRef.current?.click()}
-            title="Click to upload mountain logo"
+            onClick={handleLogoClick}
+            title={isAdmin ? "Click to upload mountain logo" : "Admin mode required to change logo"}
             style={{
               width: 110, height: 110,
               borderRadius: "50%",
@@ -299,16 +315,16 @@ export default function Home() {
             {tagline}
           </p>
 
-          {/* Edit toggle */}
+          {/* Admin + Edit toggles */}
           <div style={{ marginTop: "1.5rem", display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <button
-              onClick={() => setEditing((e) => !e)}
+              onClick={unlockAdmin}
               style={{
                 padding: "0.45rem 1.1rem",
                 borderRadius: 20,
-                border: `1px solid ${editing ? "rgba(73,14,111,0.7)" : "rgba(73,14,111,0.25)"}`,
-                background: editing ? "rgba(73,14,111,0.1)" : "rgba(73,14,111,0.05)",
-                color: editing ? "#490e6f" : "#7c5fa0",
+                border: `1px solid ${isAdmin ? "rgba(220,38,38,0.5)" : "rgba(73,14,111,0.2)"}`,
+                background: isAdmin ? "rgba(220,38,38,0.08)" : "rgba(73,14,111,0.04)",
+                color: isAdmin ? "#dc2626" : "#9b87b5",
                 fontSize: "0.8rem",
                 fontWeight: 700,
                 letterSpacing: "0.06em",
@@ -316,9 +332,28 @@ export default function Home() {
                 transition: "all 0.2s",
               }}
             >
-              {editing ? "✓ Done Editing" : "✎ Edit Cards"}
+              {isAdmin ? "🔓 Admin On · Lock" : "🔒 Admin"}
             </button>
-            {editing && (
+            {isAdmin && (
+              <button
+                onClick={() => setEditing((e) => !e)}
+                style={{
+                  padding: "0.45rem 1.1rem",
+                  borderRadius: 20,
+                  border: `1px solid ${editing ? "rgba(73,14,111,0.7)" : "rgba(73,14,111,0.25)"}`,
+                  background: editing ? "rgba(73,14,111,0.1)" : "rgba(73,14,111,0.05)",
+                  color: editing ? "#490e6f" : "#7c5fa0",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                {editing ? "✓ Done Editing" : "✎ Edit Cards"}
+              </button>
+            )}
+            {editing && isAdmin && (
               <button
                 onClick={addPath}
                 style={{
@@ -337,7 +372,7 @@ export default function Home() {
               </button>
             )}
           </div>
-          {editing && (
+          {editing && isAdmin && (
             <p style={{ marginTop: "0.6rem", fontSize: "0.75rem", color: "#9b87b5" }}>
               Double-click any text to edit · Click logo square to upload image · Color swatch on hover
             </p>
@@ -355,7 +390,7 @@ export default function Home() {
         }}>
           {tools.map((tool, i) => (
             <div key={tool.id} style={{ position: "relative" }}>
-              <ToolCard tool={tool} index={i} onUpdate={update} />
+              <ToolCard tool={tool} index={i} onUpdate={update} isAdmin={isAdmin} />
               {editing && (
                 <button
                   onClick={() => remove(tool.id)}

@@ -21,17 +21,20 @@ function EditableField({
   tag = "span",
   style,
   multiline,
+  isAdmin,
 }: {
   value: string;
   onChange: (v: string) => void;
   tag?: "span" | "div";
   style?: React.CSSProperties;
   multiline?: boolean;
+  isAdmin?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
   const [editing, setEditing] = useState(false);
 
   const start = (e: React.MouseEvent) => {
+    if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     setEditing(true);
@@ -74,7 +77,7 @@ function EditableField({
         textOverflow: editing ? "unset" : "ellipsis",
         display: "block",
       }}
-      title={editing ? "" : "Double-click to edit"}
+      title={editing ? "" : isAdmin ? "Double-click to edit" : ""}
     >
       {value}
     </Tag>
@@ -85,10 +88,12 @@ export default function ToolCard({
   tool: initial,
   index,
   onUpdate,
+  isAdmin,
 }: {
   tool: Tool;
   index: number;
   onUpdate: (updated: Tool) => void;
+  isAdmin?: boolean;
 }) {
   const [tool, setTool] = useState(initial);
   const [hovered, setHovered] = useState(false);
@@ -172,8 +177,8 @@ export default function ToolCard({
           {/* Logo / Abbr slot */}
           <div style={{ position: "relative", flexShrink: 0 }}>
             <div
-              onClick={() => logoInputRef.current?.click()}
-              title="Click to upload card logo"
+              onClick={() => isAdmin && logoInputRef.current?.click()}
+              title={isAdmin ? "Click to upload card logo" : ""}
               style={{
                 width: 42, height: 42, borderRadius: 10,
                 background: cardLogo ? "transparent" : `linear-gradient(135deg,${tool.color}22,${tool.color}0d)`,
@@ -191,6 +196,7 @@ export default function ToolCard({
                 <EditableField
                   value={tool.abbr}
                   onChange={(v) => update({ abbr: v.slice(0, 4).toUpperCase() })}
+                  isAdmin={isAdmin}
                   style={{
                     width: 42, height: 42, lineHeight: "42px", textAlign: "center",
                     fontSize: 11, fontWeight: 800, letterSpacing: "0.05em",
@@ -232,6 +238,7 @@ export default function ToolCard({
         <EditableField
           value={tool.name}
           onChange={(v) => update({ name: v })}
+          isAdmin={isAdmin}
           style={{ fontSize: "0.95rem", fontWeight: 700, color: hovered ? "#1a0030" : "#490e6f", marginBottom: "0.3rem" }}
         />
 
@@ -241,6 +248,7 @@ export default function ToolCard({
           onChange={(v) => update({ desc: v })}
           multiline
           tag="div"
+          isAdmin={isAdmin}
           style={{ fontSize: "0.8rem", color: "#7c5fa0", lineHeight: 1.55 }}
         />
 
@@ -248,6 +256,7 @@ export default function ToolCard({
         <EditableField
           value={tool.url}
           onChange={(v) => update({ url: v })}
+          isAdmin={isAdmin}
           style={{ fontSize: "0.72rem", color: "#b0a0c8", marginTop: "0.5rem" }}
         />
 
@@ -281,16 +290,18 @@ export default function ToolCard({
           </a>
         )}
 
-        {/* Color picker */}
-        <div style={{ position: "absolute", bottom: "1.25rem", right: "1.25rem", opacity: hovered ? 0.7 : 0, transition: "opacity 0.2s" }}>
-          <input
-            type="color"
-            value={tool.color}
-            onChange={(e) => update({ color: e.target.value })}
-            title="Card accent color"
-            style={{ width: 18, height: 18, borderRadius: 4, border: "none", padding: 0, cursor: "pointer", background: "none" }}
-          />
-        </div>
+        {/* Color picker — admin only */}
+        {isAdmin && (
+          <div style={{ position: "absolute", bottom: "1.25rem", right: "1.25rem", opacity: hovered ? 0.7 : 0, transition: "opacity 0.2s" }}>
+            <input
+              type="color"
+              value={tool.color}
+              onChange={(e) => update({ color: e.target.value })}
+              title="Card accent color"
+              style={{ width: 18, height: 18, borderRadius: 4, border: "none", padding: 0, cursor: "pointer", background: "none" }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
