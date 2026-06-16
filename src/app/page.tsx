@@ -18,7 +18,7 @@ const DEFAULT_TOOLS: Tool[] = [
   { id: "traitdough",     name: "Trait Dough",            abbr: "TD",  url: "https://bit.ly/traitdough",                                                                           desc: "Log LRG traits → live squad points in CoC",        color: "#16a34a" },
   { id: "accountability", name: "Accountability Log",     abbr: "AL",  url: "https://docs.google.com/spreadsheets/d/1IVFnkQQvSvNSY_OZPMutPzkTqmJ1j5XYRoT9YvNy-v4/edit",                               desc: "Intervention & consequence log (staff only)",       color: "#dc2626" },
   // MLC Handbooks — single card, opens /handbooks page with all 5
-  { id: "mlc-handbooks",  name: "MLC Handbooks",          abbr: "MLC", url: "/handbooks",                                                                                                                 desc: "All 5 leadership track handbooks — Generals, Ambassadors, Delegates, Vanguard & MLC overview", color: "#0891b2" },
+  { id: "mlc-handbooks",  name: "MLC Handbooks",          abbr: "MLC", url: "https://bit.ly/emsstudentleaders",                                                                                            desc: "All 5 leadership track handbooks — Generals, Ambassadors, Delegates, Vanguard & MLC overview", color: "#0891b2" },
 ];
 
 const STORAGE_KEY = "emsmountain_tools";
