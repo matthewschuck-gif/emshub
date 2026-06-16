@@ -1,18 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0a0014;
-  --deep: #06000d;
-  --card: #120020;
+  --bg: #f5f3f8;
+  --card: #ffffff;
   --purple: #490e6f;
   --purple-mid: #6b1fa3;
   --purple-light: #9333ea;
-  --gold: #ffe100;
-  --gold-light: #fff176;
-  --glow-purple: rgba(73, 14, 111, 0.6);
-  --glow-gold: rgba(255, 225, 0, 0.45);
-  --text: #f5f0ff;
-  --muted: #9b7fc0;
+  --gold: #c47f00;
+  --gold-light: #b07200;
+  --border: rgba(73, 14, 111, 0.14);
+  --text: #1a0030;
+  --muted: #7c5fa0;
 }
 
 * {
@@ -37,9 +35,4 @@ html, body {
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes shimmer-text {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
 }
