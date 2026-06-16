@@ -2,148 +2,178 @@
 
 import { useEffect, useRef } from "react";
 
-interface Branch {
+interface Segment {
   x1: number; y1: number;
   x2: number; y2: number;
-  children: Branch[];
   depth: number;
 }
 
-interface Firefly {
-  branchIdx: number;
-  t: number;       // 0..1 along path
+interface Bug {
+  seg: number;
+  t: number;
   speed: number;
-  color: string;
-  alpha: number;
+  gold: boolean;
   size: number;
-  trail: { x: number; y: number; a: number }[];
+  alpha: number;
+  trail: { x: number; y: number }[];
 }
 
-function buildBranch(
+// Recursively grow a branch tree from (x,y) in direction `angle`
+function grow(
   x: number, y: number,
-  angle: number, length: number, depth: number,
-  branches: { x1: number; y1: number; x2: number; y2: number; depth: number }[]
+  angle: number, len: number, depth: number,
+  out: Segment[]
 ) {
-  if (depth === 0 || length < 4) return;
-  const x2 = x + Math.cos(angle) * length;
-  const y2 = y + Math.sin(angle) * length;
-  branches.push({ x1: x, y1: y, x2, y2, depth });
-  const spread = 0.35 + Math.random() * 0.2;
-  buildBranch(x2, y2, angle - spread, length * 0.72, depth - 1, branches);
-  buildBranch(x2, y2, angle + spread, length * 0.68, depth - 1, branches);
-  if (depth > 3 && Math.random() > 0.5)
-    buildBranch(x2, y2, angle + (Math.random() - 0.5) * 0.5, length * 0.55, depth - 2, branches);
+  if (depth === 0 || len < 5) return;
+  const x2 = x + Math.cos(angle) * len;
+  const y2 = y + Math.sin(angle) * len;
+  out.push({ x1: x, y1: y, x2, y2, depth });
+  const spread = 0.28 + Math.random() * 0.22;
+  grow(x2, y2, angle - spread, len * 0.7, depth - 1, out);
+  grow(x2, y2, angle + spread, len * 0.65, depth - 1, out);
+  if (depth > 3 && Math.random() > 0.45)
+    grow(x2, y2, angle + (Math.random() - 0.5) * 0.4, len * 0.5, depth - 2, out);
 }
 
 export default function MountainCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvas = ref.current!;
     const ctx = canvas.getContext("2d")!;
     let raf: number;
     let W = 0, H = 0;
+    let segs: Segment[] = [];
+    let bugs: Bug[] = [];
 
-    type FlatBranch = { x1: number; y1: number; x2: number; y2: number; depth: number };
-    let branches: FlatBranch[] = [];
-    let fireflies: Firefly[] = [];
+    const PURPLE = "#490e6f";
+    const GOLD   = "#ffe100";
 
-    function buildMountain() {
-      W = canvas!.width = window.innerWidth;
-      H = canvas!.height = window.innerHeight;
-      branches = [];
+    function hex(h: string, a: number) {
+      const r = parseInt(h.slice(1, 3), 16);
+      const g = parseInt(h.slice(3, 5), 16);
+      const b = parseInt(h.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
 
-      // Mountain silhouette points
-      const baseY = H * 0.82;
+    // Mountain silhouette as a polygon (canvas coords)
+    function mountainPoly(w: number, h: number) {
+      const base = h * 0.88;
+      const peak = { x: w * 0.5, y: h * 0.12 };
+      return [
+        [0, h],
+        [0, base],
+        [w * 0.06, base - h * 0.02],
+        [w * 0.14, base - h * 0.06],
+        [w * 0.22, base - h * 0.12],
+        [w * 0.30, base - h * 0.20],
+        [w * 0.38, base - h * 0.30],
+        [w * 0.43, base - h * 0.42],
+        [peak.x - w * 0.03, peak.y + h * 0.06],
+        [peak.x, peak.y],                          // PEAK
+        [peak.x + w * 0.03, peak.y + h * 0.06],
+        [w * 0.57, base - h * 0.42],
+        [w * 0.62, base - h * 0.30],
+        [w * 0.70, base - h * 0.20],
+        [w * 0.78, base - h * 0.12],
+        [w * 0.86, base - h * 0.06],
+        [w * 0.94, base - h * 0.02],
+        [w, base],
+        [w, h],
+      ];
+    }
+
+    function build() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      segs = [];
+
+      const base = H * 0.88;
       const peakX = W * 0.5;
-      const peakY = H * 0.15;
+      const peakY = H * 0.12;
 
-      // Three tree clusters: left slope, peak, right slope
+      // Branch clusters: peak + left/right shoulders + foothills
       const roots = [
-        { x: peakX - W * 0.22, y: baseY - H * 0.05, baseAngle: -Math.PI / 2 - 0.3, len: H * 0.18 },
-        { x: peakX, y: peakY + H * 0.04, baseAngle: -Math.PI / 2, len: H * 0.24 },
-        { x: peakX + W * 0.18, y: baseY - H * 0.04, baseAngle: -Math.PI / 2 + 0.25, len: H * 0.16 },
-        { x: peakX - W * 0.38, y: baseY, baseAngle: -Math.PI / 2 - 0.1, len: H * 0.12 },
-        { x: peakX + W * 0.34, y: baseY, baseAngle: -Math.PI / 2 + 0.1, len: H * 0.13 },
+        // Summit — tallest, most prominent
+        { x: peakX,        y: peakY + H * 0.04,  a: -Math.PI / 2,        l: H * 0.28, d: 8 },
+        // Left shoulder
+        { x: W * 0.38,     y: base - H * 0.30,   a: -Math.PI / 2 - 0.15, l: H * 0.18, d: 7 },
+        // Right shoulder
+        { x: W * 0.62,     y: base - H * 0.30,   a: -Math.PI / 2 + 0.15, l: H * 0.18, d: 7 },
+        // Left mid-slope
+        { x: W * 0.28,     y: base - H * 0.18,   a: -Math.PI / 2 - 0.25, l: H * 0.13, d: 6 },
+        // Right mid-slope
+        { x: W * 0.72,     y: base - H * 0.18,   a: -Math.PI / 2 + 0.25, l: H * 0.13, d: 6 },
+        // Left foothill
+        { x: W * 0.16,     y: base - H * 0.07,   a: -Math.PI / 2 - 0.1,  l: H * 0.09, d: 5 },
+        // Right foothill
+        { x: W * 0.84,     y: base - H * 0.07,   a: -Math.PI / 2 + 0.1,  l: H * 0.09, d: 5 },
       ];
 
-      for (const r of roots) {
-        buildBranch(r.x, r.y, r.baseAngle, r.len, 7, branches);
-      }
+      for (const r of roots) grow(r.x, r.y, r.a, r.l, r.d, segs);
 
-      // Spawn fireflies along branches
-      fireflies = [];
-      const GOLD = "#eab308";
-      const PURPLE = "#a855f7";
-      const LAVENDER = "#c084fc";
-
-      for (let i = 0; i < 80; i++) {
-        const branchIdx = Math.floor(Math.random() * branches.length);
-        const colorRoll = Math.random();
-        fireflies.push({
-          branchIdx,
-          t: Math.random(),
-          speed: 0.002 + Math.random() * 0.004,
-          color: colorRoll < 0.35 ? GOLD : colorRoll < 0.65 ? PURPLE : LAVENDER,
-          alpha: 0.6 + Math.random() * 0.4,
-          size: 1.5 + Math.random() * 2.5,
+      // Populate lightning bugs
+      bugs = [];
+      for (let i = 0; i < 110; i++) {
+        const isGold = Math.random() < 0.38;
+        bugs.push({
+          seg:   Math.floor(Math.random() * segs.length),
+          t:     Math.random(),
+          speed: 0.0018 + Math.random() * 0.0035,
+          gold:  isGold,
+          size:  isGold ? 2.5 + Math.random() * 2 : 1.8 + Math.random() * 1.5,
+          alpha: 0.7 + Math.random() * 0.3,
           trail: [],
         });
       }
     }
 
     function drawMountain() {
-      const peakX = W * 0.5;
-      const peakY = H * 0.15;
-      const baseY = H * 0.82;
-
+      const poly = mountainPoly(W, H);
       ctx.save();
       ctx.beginPath();
-      ctx.moveTo(0, baseY + 80);
-      // Left foot
-      ctx.lineTo(W * 0.05, baseY);
-      ctx.lineTo(W * 0.18, baseY - H * 0.04);
-      ctx.lineTo(W * 0.28, baseY - H * 0.07);
-      // Left shoulder
-      ctx.lineTo(W * 0.38, baseY - H * 0.14);
-      ctx.lineTo(peakX - W * 0.04, peakY + H * 0.05);
-      // Peak
-      ctx.lineTo(peakX, peakY);
-      ctx.lineTo(peakX + W * 0.04, peakY + H * 0.05);
-      // Right shoulder
-      ctx.lineTo(W * 0.62, baseY - H * 0.14);
-      ctx.lineTo(W * 0.72, baseY - H * 0.05);
-      ctx.lineTo(W * 0.84, baseY - H * 0.01);
-      // Right foot
-      ctx.lineTo(W, baseY);
-      ctx.lineTo(W, baseY + 80);
+      ctx.moveTo(poly[0][0], poly[0][1]);
+      for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i][0], poly[i][1]);
       ctx.closePath();
 
-      const grad = ctx.createLinearGradient(0, peakY, 0, baseY + 80);
-      grad.addColorStop(0, "rgba(60,20,110,0.72)");
-      grad.addColorStop(0.5, "rgba(30,10,60,0.82)");
-      grad.addColorStop(1, "rgba(8,6,18,0.95)");
+      // Fill — deep purple body
+      const grad = ctx.createLinearGradient(W * 0.5, H * 0.12, W * 0.5, H * 0.88);
+      grad.addColorStop(0,    "rgba(90, 20, 140, 0.92)");
+      grad.addColorStop(0.35, "rgba(55, 10, 95,  0.88)");
+      grad.addColorStop(0.7,  "rgba(30,  5, 55,  0.92)");
+      grad.addColorStop(1,    "rgba(10,  0, 20,  0.97)");
       ctx.fillStyle = grad;
       ctx.fill();
-      ctx.restore();
 
-      // Subtle mountain edge glow
-      ctx.save();
-      ctx.strokeStyle = "rgba(147,51,234,0.18)";
+      // Edge highlight
+      ctx.strokeStyle = "rgba(255,225,0,0.12)";
       ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.restore();
+
+      // Summit crown glow
+      const peakX = W * 0.5, peakY = H * 0.12;
+      const sg = ctx.createRadialGradient(peakX, peakY, 0, peakX, peakY, W * 0.18);
+      sg.addColorStop(0,    "rgba(255,225,0, 0.30)");
+      sg.addColorStop(0.25, "rgba(255,225,0, 0.12)");
+      sg.addColorStop(0.6,  "rgba(100,30,180,0.06)");
+      sg.addColorStop(1,    "rgba(0,0,0,0)");
+      ctx.fillStyle = sg;
+      ctx.beginPath();
+      ctx.arc(peakX, peakY, W * 0.18, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    function drawBranches() {
-      for (const b of branches) {
-        const alpha = 0.04 + (7 - b.depth) * 0.015;
+    function drawPaths() {
+      for (const s of segs) {
+        const a = 0.06 + s.depth * 0.022;
         ctx.beginPath();
-        ctx.moveTo(b.x1, b.y1);
-        ctx.lineTo(b.x2, b.y2);
-        ctx.strokeStyle = `rgba(168,85,247,${alpha})`;
-        ctx.lineWidth = Math.max(0.3, b.depth * 0.25);
+        ctx.moveTo(s.x1, s.y1);
+        ctx.lineTo(s.x2, s.y2);
+        ctx.strokeStyle = s.depth > 5
+          ? hex(GOLD, a * 0.7)
+          : hex(PURPLE, a + 0.05);
+        ctx.lineWidth = Math.max(0.4, s.depth * 0.3 - 0.5);
         ctx.stroke();
       }
     }
@@ -153,114 +183,84 @@ export default function MountainCanvas() {
     function tick() {
       ctx.clearRect(0, 0, W, H);
 
-      // Stars / ambient noise
-      ctx.save();
-      ctx.globalAlpha = 0.25;
-      for (let i = 0; i < 120; i++) {
-        // deterministic scatter using index as seed
-        const sx = ((i * 137.508 + 42) % W);
-        const sy = ((i * 97.3 + 13) % (H * 0.75));
-        const sr = 0.4 + (i % 5) * 0.15;
+      // Sky stars
+      for (let i = 0; i < 160; i++) {
+        const sx = (i * 137.508 + 17) % W;
+        const sy = (i * 83.1   + 31) % (H * 0.75);
+        const sr = 0.3 + (i % 4) * 0.18;
+        ctx.globalAlpha = 0.15 + (i % 5) * 0.06;
         ctx.beginPath();
         ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-        ctx.fillStyle = i % 3 === 0 ? "#fbbf24" : "#c084fc";
+        ctx.fillStyle = i % 4 === 0 ? GOLD : "#c084fc";
         ctx.fill();
       }
-      ctx.restore();
+      ctx.globalAlpha = 1;
 
       drawMountain();
-      drawBranches();
+      drawPaths();
 
-      // Fireflies
-      for (const ff of fireflies) {
-        ff.t += ff.speed;
-        if (ff.t > 1) {
-          ff.t = 0;
-          ff.branchIdx = Math.floor(Math.random() * branches.length);
-          ff.trail = [];
+      // Bugs
+      for (const bug of bugs) {
+        bug.t += bug.speed;
+        if (bug.t >= 1) {
+          bug.t = 0;
+          bug.seg = Math.floor(Math.random() * segs.length);
+          bug.trail = [];
         }
+        const s = segs[bug.seg];
+        if (!s) continue;
+        const x = lerp(s.x1, s.x2, bug.t);
+        const y = lerp(s.y1, s.y2, bug.t);
 
-        const b = branches[ff.branchIdx];
-        if (!b) continue;
+        bug.trail.push({ x, y });
+        if (bug.trail.length > 14) bug.trail.shift();
 
-        const x = lerp(b.x1, b.x2, ff.t);
-        const y = lerp(b.y1, b.y2, ff.t);
+        const col = bug.gold ? GOLD : PURPLE;
 
-        ff.trail.push({ x, y, a: ff.alpha });
-        if (ff.trail.length > 12) ff.trail.shift();
-
-        // Draw trail
-        for (let i = 0; i < ff.trail.length; i++) {
-          const tp = ff.trail[i];
-          const ta = (i / ff.trail.length) * tp.a * 0.6;
-          ctx.beginPath();
-          ctx.arc(tp.x, tp.y, ff.size * 0.5, 0, Math.PI * 2);
-          ctx.fillStyle = ff.color.replace(")", `,${ta})`).replace("rgb(", "rgba(").replace("#", "").replace(/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i, (_, r, g, bh) =>
-            `rgba(${parseInt(r, 16)},${parseInt(g, 16)},${parseInt(bh, 16)},${ta})`
-          );
-          // simpler approach
+        // Trail fade
+        for (let i = 0; i < bug.trail.length; i++) {
+          const tp = bug.trail[i];
+          const ta = (i / bug.trail.length) * bug.alpha * 0.5;
           ctx.globalAlpha = ta;
-          ctx.fillStyle = ff.color;
+          ctx.beginPath();
+          ctx.arc(tp.x, tp.y, bug.size * 0.55, 0, Math.PI * 2);
+          ctx.fillStyle = col;
           ctx.fill();
         }
-
         ctx.globalAlpha = 1;
 
-        // Glow head
-        const glow = ctx.createRadialGradient(x, y, 0, x, y, ff.size * 4);
-        glow.addColorStop(0, ff.color + "cc");
-        glow.addColorStop(0.4, ff.color + "55");
-        glow.addColorStop(1, ff.color + "00");
-        ctx.beginPath();
-        ctx.arc(x, y, ff.size * 4, 0, Math.PI * 2);
+        // Glow halo
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, bug.size * 5);
+        glow.addColorStop(0,   hex(col, bug.alpha * 0.9));
+        glow.addColorStop(0.4, hex(col, bug.alpha * 0.3));
+        glow.addColorStop(1,   hex(col, 0));
         ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(x, y, bug.size * 5, 0, Math.PI * 2);
         ctx.fill();
 
+        // Bright core
+        ctx.globalAlpha = bug.alpha;
+        ctx.fillStyle = bug.gold ? "#fff9c4" : "#e9d5ff";
         ctx.beginPath();
-        ctx.arc(x, y, ff.size, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffffff";
-        ctx.globalAlpha = ff.alpha * 0.9;
+        ctx.arc(x, y, bug.size, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
       }
-
-      // Summit glow
-      const peakX = W * 0.5;
-      const peakY = H * 0.15;
-      const sg = ctx.createRadialGradient(peakX, peakY, 0, peakX, peakY, 120);
-      sg.addColorStop(0, "rgba(234,179,8,0.18)");
-      sg.addColorStop(0.5, "rgba(168,85,247,0.08)");
-      sg.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = sg;
-      ctx.beginPath();
-      ctx.arc(peakX, peakY, 120, 0, Math.PI * 2);
-      ctx.fill();
 
       raf = requestAnimationFrame(tick);
     }
 
-    buildMountain();
+    build();
     tick();
-
-    const onResize = () => { buildMountain(); };
-    window.addEventListener("resize", onResize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
-    };
+    window.addEventListener("resize", build);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", build); };
   }, []);
 
   return (
     <canvas
-      ref={canvasRef}
-      style={{
-        position: "fixed",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
-        zIndex: 0,
-      }}
+      ref={ref}
+      style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }}
     />
   );
 }
