@@ -99,6 +99,7 @@ export default function ToolCard({
   }
 
   const isLive = !tool.coming && tool.url !== "#";
+  const isInternal = isLive && tool.url.startsWith("/");
 
   return (
     <div
@@ -185,8 +186,8 @@ export default function ToolCard({
         {!tool.coming && (
           <a
             href={tool.url !== "#" ? tool.url : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={isInternal ? "_self" : "_blank"}
+            rel={isInternal ? undefined : "noopener noreferrer"}
             onClick={(e) => { if (tool.url === "#") e.preventDefault(); }}
             style={{
               marginTop: "0.8rem",
