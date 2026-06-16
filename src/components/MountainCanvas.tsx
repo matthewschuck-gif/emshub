@@ -55,36 +55,39 @@ export default function MountainCanvas() {
     const GOLD   = "#ffe100";
     const PURPLE = "#490e6f";
 
-    // Wide mountain polygon — low peak, broad base spanning full width
+    // Wide shallow mountain — very broad base, gentle slopes, narrow peak
     function mountainPoly(w: number, h: number) {
-      const base = h * 0.92;
-      const peak = { x: w * 0.5, y: h * 0.22 };
+      const base = h * 0.88;
+      const peak = { x: w * 0.5, y: h * 0.32 };
       return [
         [0, h + 4],
         [0, base],
-        // Left far foothill — very gradual rise
-        [w * 0.04, base - h * 0.015],
-        [w * 0.10, base - h * 0.04],
-        [w * 0.17, base - h * 0.09],
-        [w * 0.24, base - h * 0.17],
-        // Left mid-slope — steady wide angle
-        [w * 0.31, base - h * 0.26],
-        [w * 0.37, base - h * 0.36],
-        [w * 0.42, base - h * 0.46],
-        [w * 0.46, base - h * 0.54],
-        // Near-peak approach
-        [peak.x - w * 0.025, peak.y + h * 0.04],
-        [peak.x, peak.y],           // PEAK
-        [peak.x + w * 0.025, peak.y + h * 0.04],
-        // Right side mirror
-        [w * 0.54, base - h * 0.54],
-        [w * 0.58, base - h * 0.46],
-        [w * 0.63, base - h * 0.36],
-        [w * 0.69, base - h * 0.26],
-        [w * 0.76, base - h * 0.17],
-        [w * 0.83, base - h * 0.09],
-        [w * 0.90, base - h * 0.04],
-        [w * 0.96, base - h * 0.015],
+        // Left slope — nearly flat for most of the width, rises only near center
+        [w * 0.05, base - h * 0.008],
+        [w * 0.10, base - h * 0.018],
+        [w * 0.16, base - h * 0.032],
+        [w * 0.22, base - h * 0.052],
+        [w * 0.28, base - h * 0.082],
+        [w * 0.34, base - h * 0.125],
+        [w * 0.39, base - h * 0.175],
+        [w * 0.43, base - h * 0.228],
+        [w * 0.46, base - h * 0.278],
+        [w * 0.48, base - h * 0.316],
+        // Near-peak
+        [peak.x - w * 0.015, peak.y + h * 0.022],
+        [peak.x, peak.y],
+        [peak.x + w * 0.015, peak.y + h * 0.022],
+        // Right slope — mirror
+        [w * 0.52, base - h * 0.316],
+        [w * 0.54, base - h * 0.278],
+        [w * 0.57, base - h * 0.228],
+        [w * 0.61, base - h * 0.175],
+        [w * 0.66, base - h * 0.125],
+        [w * 0.72, base - h * 0.082],
+        [w * 0.78, base - h * 0.052],
+        [w * 0.84, base - h * 0.032],
+        [w * 0.90, base - h * 0.018],
+        [w * 0.95, base - h * 0.008],
         [w, base],
         [w, h + 4],
       ];
@@ -95,30 +98,30 @@ export default function MountainCanvas() {
       H = canvas.height = window.innerHeight;
       segs = [];
 
-      const base = H * 0.92;
+      const base = H * 0.88;
       const peakX = W * 0.5;
-      const peakY = H * 0.22;
+      const peakY = H * 0.32;
 
-      // Dense branch networks spread across the wide mountain face
+      // Branch networks matched to wide shallow mountain shape
       const roots = [
-        // Summit — straight up, longest
-        { x: peakX,     y: peakY + H * 0.03, a: -Math.PI / 2,         l: H * 0.22, d: 8 },
-        // Upper-left slope
-        { x: W * 0.40,  y: base - H * 0.48,  a: -Math.PI / 2 - 0.18,  l: H * 0.17, d: 7 },
+        // Summit
+        { x: peakX,     y: peakY + H * 0.02, a: -Math.PI / 2,         l: H * 0.18, d: 8 },
+        // Upper-left slope (near peak)
+        { x: W * 0.43,  y: base - H * 0.27,  a: -Math.PI / 2 - 0.20,  l: H * 0.14, d: 7 },
         // Upper-right slope
-        { x: W * 0.60,  y: base - H * 0.48,  a: -Math.PI / 2 + 0.18,  l: H * 0.17, d: 7 },
+        { x: W * 0.57,  y: base - H * 0.27,  a: -Math.PI / 2 + 0.20,  l: H * 0.14, d: 7 },
         // Left mid-slope
-        { x: W * 0.30,  y: base - H * 0.28,  a: -Math.PI / 2 - 0.28,  l: H * 0.16, d: 7 },
+        { x: W * 0.34,  y: base - H * 0.14,  a: -Math.PI / 2 - 0.30,  l: H * 0.13, d: 7 },
         // Right mid-slope
-        { x: W * 0.70,  y: base - H * 0.28,  a: -Math.PI / 2 + 0.28,  l: H * 0.16, d: 7 },
+        { x: W * 0.66,  y: base - H * 0.14,  a: -Math.PI / 2 + 0.30,  l: H * 0.13, d: 7 },
         // Left lower-slope
-        { x: W * 0.20,  y: base - H * 0.14,  a: -Math.PI / 2 - 0.22,  l: H * 0.13, d: 6 },
+        { x: W * 0.22,  y: base - H * 0.07,  a: -Math.PI / 2 - 0.25,  l: H * 0.11, d: 6 },
         // Right lower-slope
-        { x: W * 0.80,  y: base - H * 0.14,  a: -Math.PI / 2 + 0.22,  l: H * 0.13, d: 6 },
+        { x: W * 0.78,  y: base - H * 0.07,  a: -Math.PI / 2 + 0.25,  l: H * 0.11, d: 6 },
         // Left foothill
-        { x: W * 0.10,  y: base - H * 0.05,  a: -Math.PI / 2 - 0.12,  l: H * 0.09, d: 5 },
+        { x: W * 0.10,  y: base - H * 0.025, a: -Math.PI / 2 - 0.15,  l: H * 0.08, d: 5 },
         // Right foothill
-        { x: W * 0.90,  y: base - H * 0.05,  a: -Math.PI / 2 + 0.12,  l: H * 0.09, d: 5 },
+        { x: W * 0.90,  y: base - H * 0.025, a: -Math.PI / 2 + 0.15,  l: H * 0.08, d: 5 },
       ];
 
       for (const r of roots) grow(r.x, r.y, r.a, r.l, r.d, segs);
@@ -146,7 +149,7 @@ export default function MountainCanvas() {
       for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i][0], poly[i][1]);
       ctx.closePath();
 
-      const peakY = H * 0.22;
+      const peakY = H * 0.32;
       const grad = ctx.createLinearGradient(W * 0.5, peakY, W * 0.5, H);
       grad.addColorStop(0,    "rgba(100, 25, 160, 0.95)");
       grad.addColorStop(0.3,  "rgba(70,  12, 110, 0.93)");
@@ -163,14 +166,14 @@ export default function MountainCanvas() {
 
       // Summit glow — wide radial corona
       const peakX = W * 0.5;
-      const sg = ctx.createRadialGradient(peakX, peakY, 0, peakX, peakY, W * 0.22);
+      const sg = ctx.createRadialGradient(peakX, peakY, 0, peakX, peakY, W * 0.18);
       sg.addColorStop(0,    "rgba(255,225,0, 0.32)");
       sg.addColorStop(0.15, "rgba(255,225,0, 0.14)");
       sg.addColorStop(0.45, "rgba(100,30,180,0.06)");
       sg.addColorStop(1,    "rgba(0,0,0,0)");
       ctx.fillStyle = sg;
       ctx.beginPath();
-      ctx.arc(peakX, peakY, W * 0.22, 0, Math.PI * 2);
+      ctx.arc(peakX, peakY, W * 0.18, 0, Math.PI * 2);
       ctx.fill();
     }
 
