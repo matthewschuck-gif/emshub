@@ -19,11 +19,6 @@ const DEFAULT_TOOLS: Tool[] = [
   { id: "accountability", name: "Accountability Log",     abbr: "AL",  url: "https://docs.google.com/spreadsheets/d/1IVFnkQQvSvNSY_OZPMutPzkTqmJ1j5XYRoT9YvNy-v4/edit",                               desc: "Intervention & consequence log (staff only)",       color: "#dc2626" },
   // MLC Handbooks — single card, opens /handbooks page with all 5
   { id: "mlc-handbooks",  name: "MLC Handbooks",          abbr: "MLC", url: "/handbooks",                                                                                                                 desc: "All 5 leadership track handbooks — Generals, Ambassadors, Delegates, Vanguard & MLC overview", color: "#0891b2" },
-  // Squad docs
-  { id: "sg-gold",        name: "Gold Squad",             abbr: "GLD", url: "https://docs.google.com/document/d/1QCxGZ59ohzvSbpu3n40B9ctfkLnRsVfOLli6ZLs8n70/edit",                                   desc: "Gold squad resources, roster & guidelines",         color: "#ca8a04" },
-  { id: "sg-grey",        name: "Grey Squad",             abbr: "GRY", url: "https://docs.google.com/document/d/1ymJ1zMhJg-sAono6yuyPzjXDpO6vUtI05Hw49QRUP1A/edit",                                   desc: "Grey squad resources, roster & guidelines",         color: "#6b7280" },
-  { id: "sg-purple",      name: "Purple Squad",           abbr: "PRP", url: "https://docs.google.com/document/d/14ZNCbY8qLq2qWiA7lC-XaL32Fr8pwzMMUD0vkq27a_A/edit",                                   desc: "Purple squad resources, roster & guidelines",       color: "#7c3aed" },
-  { id: "sg-black",       name: "Black Squad",            abbr: "BLK", url: "#",                                                                                                                          desc: "Black squad resources, roster & guidelines",        color: "#6b7280" },
 ];
 
 const STORAGE_KEY = "emsmountain_tools";
